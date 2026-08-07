@@ -1,4 +1,4 @@
-name: Build Chef Sultan V2
+name: Build Chef Sultan V3
 
 on:
   workflow_dispatch:
@@ -22,25 +22,17 @@ jobs:
         with:
           channel: stable
 
-      - name: Extract V2
-        run: |
-          mkdir chef_v2
-          unzip chef_sultan_recipes_v2_ready_with_images.zip -d chef_v2
-
       - name: Prepare Android
-        working-directory: chef_v2
         run: flutter create --platforms=android .
 
       - name: Get packages
-        working-directory: chef_v2
         run: flutter pub get
 
       - name: Build APK
-        working-directory: chef_v2
         run: flutter build apk --release
 
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chef-Sultan-V2-APK
-          path: chef_v2/build/app/outputs/flutter-apk/app-release.apk
+          name: Chef-Sultan-V3-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
