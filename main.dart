@@ -52,7 +52,7 @@ Recipe(
       id: 2,
       categoryAr: 'دجاج',
       categoryEn: 'Chicken',
-      image: 'assets/images/02_crispy_chicken.jpg',
+      image: assets/images/02_crispy_chicken.jpg
       nameAr: 'كرسبي الدجاج الذهبي',
       nameEn: 'Golden Crispy Chicken',
       timeAr: 'ساعتان + 7 دقائق',
