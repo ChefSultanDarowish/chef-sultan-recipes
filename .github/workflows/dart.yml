@@ -1,17 +1,14 @@
-name: Build Android APK
+name: Build Chef Sultan V2
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Download project
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -25,17 +22,25 @@ jobs:
         with:
           channel: stable
 
-      - name: Create Android project
+      - name: Extract V2
+        run: |
+          mkdir chef_v2
+          unzip chef_sultan_recipes_v2_ready_with_images.zip -d chef_v2
+
+      - name: Prepare Android
+        working-directory: chef_v2
         run: flutter create --platforms=android .
 
       - name: Get packages
+        working-directory: chef_v2
         run: flutter pub get
 
       - name: Build APK
+        working-directory: chef_v2
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chef-Sultan-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: Chef-Sultan-V2-APK
+          path: chef_v2/build/app/outputs/flutter-apk/app-release.apk
