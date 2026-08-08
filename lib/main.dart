@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await MobileAds.instance.initialize();
   runApp(const ChefSultanApp());
 }
 
@@ -11,6 +14,15 @@ const cardDark = Color(0xFF1B1B1B);
 
 const whatsappNumber = '971503546650';
 const whatsappDisplay = '+971 50 354 6650';
+
+const admobAppId = 'ca-app-pub-4592512578405132~5168162196';
+const admobRealBannerId = 'ca-app-pub-4592512578405132/6501691092';
+
+// Keep true while we test the integration on your own phone.
+// After the Test Ad appears correctly, we will change this to false for release.
+const useAdMobTestAds = true;
+const admobAndroidTestBannerId = 'ca-app-pub-3940256099942544/6300978111';
+
 
 Future<void> openWhatsApp(BuildContext context, String message) async {
   final uri = Uri.parse(
@@ -587,6 +599,53 @@ class _HomeScreenState extends State<HomeScreen> {
   String category = 'all';
   bool favoritesOnly = false;
 
+  BannerAd? _bannerAd;
+  bool _bannerLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBanner();
+  }
+
+  void _loadBanner() {
+    final banner = BannerAd(
+      size: AdSize.banner,
+      adUnitId: useAdMobTestAds
+          ? admobAndroidTestBannerId
+          : admobRealBannerId,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          setState(() {
+            _bannerAd = ad as BannerAd;
+            _bannerLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (mounted) {
+            setState(() {
+              _bannerAd = null;
+              _bannerLoaded = false;
+            });
+          }
+        },
+      ),
+    );
+    banner.load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
   List<String> get categories {
     final values = recipes
         .map((r) => widget.arabic ? r.categoryAr : r.categoryEn)
@@ -671,33 +730,57 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
           decoration: const BoxDecoration(
             color: Color(0xFF151515),
             border: Border(top: BorderSide(color: Color(0xFF343434))),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: gold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () => openWhatsApp(context, bookingMessage),
-                  icon: const Icon(Icons.chat),
-                  label: Text(
-                    widget.arabic ? 'احجز عبر WhatsApp' : 'Book on WhatsApp',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+              if (_bannerLoaded && _bannerAd != null)
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: SizedBox(
+                    width: _bannerAd!.size.width.toDouble(),
+                    height: _bannerAd!.size.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                tooltip: widget.arabic ? 'اتصال' : 'Call',
-                onPressed: () => callChef(context),
-                icon: const Icon(Icons.call),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: gold,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () =>
+                            openWhatsApp(context, bookingMessage),
+                        icon: const Icon(Icons.chat),
+                        label: Text(
+                          widget.arabic
+                              ? 'احجز عبر WhatsApp'
+                              : 'Book on WhatsApp',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: widget.arabic ? 'اتصال' : 'Call',
+                      onPressed: () => callChef(context),
+                      icon: const Icon(Icons.call),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
