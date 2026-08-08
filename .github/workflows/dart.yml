@@ -1,4 +1,4 @@
-name: Build Chef Sultan V3
+name: Build Chef Sultan V4
 
 on:
   workflow_dispatch:
@@ -25,6 +25,14 @@ jobs:
       - name: Prepare Android
         run: flutter create --platforms=android .
 
+      - name: Set Chef Sultan app icon
+        run: |
+          cp assets/images/chef_sultan_app_icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp assets/images/chef_sultan_app_icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp assets/images/chef_sultan_app_icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp assets/images/chef_sultan_app_icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp assets/images/chef_sultan_app_icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
       - name: Get packages
         run: flutter pub get
 
@@ -34,5 +42,5 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chef-Sultan-V3-APK
+          name: Chef-Sultan-V4-APK
           path: build/app/outputs/flutter-apk/app-release.apk
