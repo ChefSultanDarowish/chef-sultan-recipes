@@ -529,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.black,
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+                  child: Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
