@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const ChefSultanApp());
@@ -7,6 +8,86 @@ void main() {
 const gold = Color(0xFFD7A72B);
 const dark = Color(0xFF111111);
 const cardDark = Color(0xFF1B1B1B);
+
+const whatsappNumber = '971503546650';
+const whatsappDisplay = '+971 50 354 6650';
+
+Future<void> openWhatsApp(BuildContext context, String message) async {
+  final uri = Uri.parse(
+    'https://wa.me/$whatsappNumber?text=${Uri.encodeComponent(message)}',
+  );
+  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تعذر فتح WhatsApp')),
+    );
+  }
+}
+
+Future<void> callChef(BuildContext context) async {
+  final uri = Uri.parse('tel:+971503546650');
+  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تعذر فتح الاتصال')),
+    );
+  }
+}
+
+class ChefService {
+  final IconData icon;
+  final String ar;
+  final String en;
+  final String descAr;
+  final String descEn;
+
+  const ChefService(this.icon, this.ar, this.en, this.descAr, this.descEn);
+}
+
+const chefServices = <ChefService>[
+  ChefService(
+    Icons.restaurant_menu,
+    'تصميم منيو للمطاعم',
+    'Restaurant Menu Design',
+    'منيو فاخر عربي/إنجليزي، ترتيب الأصناف، وصف احترافي وتجهيز QR.',
+    'Luxury Arabic/English menus, item structure, professional descriptions and QR-ready design.',
+  ),
+  ChefService(
+    Icons.room_service,
+    'شيف خاص',
+    'Private Chef',
+    'تجربة طبخ خاصة للمنازل والعزائم والضيوف.',
+    'Private dining experiences for homes, gatherings and guests.',
+  ),
+  ChefService(
+    Icons.celebration,
+    'حفلات ومناسبات',
+    'Events & Catering',
+    'تنسيق أطباق وخدمة طبخ للمناسبات والفعاليات.',
+    'Cooking and food presentation for events and special occasions.',
+  ),
+  ChefService(
+    Icons.live_tv,
+    'Live Cooking',
+    'Live Cooking',
+    'عروض طبخ مباشرة للمطاعم والفعاليات والمحتوى.',
+    'Live cooking shows for restaurants, events and content.',
+  ),
+  ChefService(
+    Icons.auto_awesome,
+    'تطوير وصفات',
+    'Recipe Development',
+    'ابتكار وصفات وأطباق جديدة مناسبة لهوية مطعمك.',
+    'Custom recipe and dish development for your restaurant concept.',
+  ),
+  ChefService(
+    Icons.groups,
+    'تدريب فريق المطبخ',
+    'Kitchen Team Training',
+    'تدريب عملي على الجودة، السرعة، التقديم وتوحيد الوصفات.',
+    'Hands-on training for quality, speed, plating and recipe consistency.',
+  ),
+];
 
 class Recipe {
   final int id;
@@ -400,6 +481,7 @@ class HomeScreen extends StatefulWidget {
   final Set<int> favorites;
   final VoidCallback onLanguage;
   final void Function(int) onFavorite;
+
   const HomeScreen({
     super.key,
     required this.arabic,
@@ -418,10 +500,17 @@ class _HomeScreenState extends State<HomeScreen> {
   bool favoritesOnly = false;
 
   List<String> get categories {
-    final values = recipes.map((r) => widget.arabic ? r.categoryAr : r.categoryEn).toSet().toList();
+    final values = recipes
+        .map((r) => widget.arabic ? r.categoryAr : r.categoryEn)
+        .toSet()
+        .toList();
     values.sort();
     return values;
   }
+
+  String get bookingMessage => widget.arabic
+      ? 'مرحباً شيف سلطان، أريد الاستفسار عن حجز خدمة شيف.'
+      : 'Hello Chef Sultan, I would like to inquire about booking a chef service.';
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +525,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chef Sultan Recipes', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Chef Sultan Recipes',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             tooltip: widget.arabic ? 'English' : 'العربية',
@@ -445,9 +537,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             tooltip: widget.arabic ? 'عن الشيف' : 'About Chef',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-              builder: (_) => AboutScreen(arabic: widget.arabic),
-            )),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AboutScreen(arabic: widget.arabic),
+              ),
+            ),
             icon: const Icon(Icons.person_outline),
           ),
         ],
@@ -456,9 +551,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _hero(context)),
+            SliverToBoxAdapter(child: _moneyActions(context)),
+            SliverToBoxAdapter(child: _serviceSection(context)),
+            SliverToBoxAdapter(child: _restaurantOffer(context)),
+            SliverToBoxAdapter(child: _recipesTitle()),
             SliverToBoxAdapter(child: _filters()),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 105),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => RecipeCard(
@@ -480,16 +579,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 58,
-        decoration: const BoxDecoration(
-          color: Color(0xFF181818),
-          border: Border(top: BorderSide(color: Color(0xFF333333))),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          widget.arabic ? 'مساحة إعلانية — جاهزة لإضافة AdMob لاحقاً' : 'Ad space — ready for AdMob integration later',
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          decoration: const BoxDecoration(
+            color: Color(0xFF151515),
+            border: Border(top: BorderSide(color: Color(0xFF343434))),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: gold,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () => openWhatsApp(context, bookingMessage),
+                  icon: const Icon(Icons.chat),
+                  label: Text(
+                    widget.arabic ? 'احجز عبر WhatsApp' : 'Book on WhatsApp',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                tooltip: widget.arabic ? 'اتصال' : 'Call',
+                onPressed: () => callChef(context),
+                icon: const Icon(Icons.call),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -497,57 +619,343 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _hero(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(12),
-      height: 230,
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      height: 260,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: gold.withOpacity(.55)),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: gold.withOpacity(.7)),
+        boxShadow: [
+          BoxShadow(
+            color: gold.withOpacity(.12),
+            blurRadius: 24,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
+          Image.asset(
+            'assets/images/chef_sultan_app_icon (2).png',
+            fit: BoxFit.cover,
+          ),
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xE6000000)],
+                colors: [
+                  Color(0x22000000),
+                  Color(0x99000000),
+                  Color(0xF2000000),
+                ],
               ),
             ),
           ),
           Positioned(
-            left: 16, right: 16, bottom: 16,
-            child: Row(
+            left: 18,
+            right: 18,
+            bottom: 18,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 66, height: 66,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: gold, width: 2),
-                    color: Colors.black,
+                const Text(
+                  'CHEF SULTAN',
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(widget.arabic ? 'وصفات الشيف سلطان' : 'Chef Sultan Recipes',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text(widget.arabic ? 'وصفات أصلية • عربية وإنجليزية' : 'Original recipes • Arabic & English',
-                        style: const TextStyle(color: Colors.white70)),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  widget.arabic
+                      ? 'وصفات • خدمات شيف • حلول للمطاعم'
+                      : 'Recipes • Chef Services • Restaurant Solutions',
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  widget.arabic
+                      ? 'حوّل فكرتك إلى تجربة طعام فاخرة.'
+                      : 'Turn your idea into a premium food experience.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _moneyActions(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _actionCard(
+              icon: Icons.calendar_month,
+              title: widget.arabic ? 'احجز الشيف' : 'Book the Chef',
+              subtitle: widget.arabic
+                  ? 'خاص • مناسبات • Live'
+                  : 'Private • Events • Live',
+              onTap: () => openWhatsApp(context, bookingMessage),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _actionCard(
+              icon: Icons.design_services,
+              title: widget.arabic ? 'اطلب منيو مطعم' : 'Order a Menu',
+              subtitle: widget.arabic
+                  ? 'عربي/إنجليزي • QR'
+                  : 'Arabic/English • QR',
+              onTap: () => openWhatsApp(
+                context,
+                widget.arabic
+                    ? 'مرحباً شيف سلطان، أريد تصميم منيو فاخر لمطعمي. أرجو إرسال التفاصيل وعرض السعر.'
+                    : 'Hello Chef Sultan, I need a premium restaurant menu design. Please send details and a quotation.',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: const Color(0xFF191919),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: gold.withOpacity(.35)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: gold, size: 30),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 2,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(
+            widget.arabic ? 'خدمات احترافية' : 'Premium Services',
+            widget.arabic
+                ? 'اختر الخدمة وأرسل طلبك مباشرة.'
+                : 'Choose a service and send your request directly.',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 154,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: chefServices.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final s = chefServices[index];
+                return SizedBox(
+                  width: 220,
+                  child: Material(
+                    color: cardDark,
+                    borderRadius: BorderRadius.circular(20),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => openWhatsApp(
+                        context,
+                        widget.arabic
+                            ? 'مرحباً شيف سلطان، أريد الاستفسار عن خدمة: ${s.ar}'
+                            : 'Hello Chef Sultan, I would like to inquire about: ${s.en}',
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: gold.withOpacity(.25),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(s.icon, color: gold),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.arabic ? s.ar : s.en,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Expanded(
+                              child: Text(
+                                widget.arabic ? s.descAr : s.descEn,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 12,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _restaurantOffer(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 2, 12, 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2A2111), Color(0xFF17130C)],
+        ),
+        border: Border.all(color: gold.withOpacity(.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.storefront, color: gold, size: 30),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.arabic
+                      ? 'حلول للمطاعم والكافيهات'
+                      : 'Restaurant & Café Solutions',
+                  style: const TextStyle(
+                    color: gold,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.arabic
+                ? 'منيو فاخر عربي/إنجليزي • QR Menu • تطوير وصفات • تنظيم الأصناف • تدريب فريق المطبخ.'
+                : 'Premium bilingual menu • QR menu • recipe development • menu structure • kitchen team training.',
+            style: const TextStyle(color: Colors.white70, height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: gold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => QuoteScreen(arabic: widget.arabic),
+                ),
+              ),
+              icon: const Icon(Icons.request_quote),
+              label: Text(
+                widget.arabic ? 'اطلب عرض سعر' : 'Request a Quote',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recipesTitle() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+      child: _sectionHeader(
+        widget.arabic ? 'وصفات الشيف سلطان' : 'Chef Sultan Recipes',
+        widget.arabic
+            ? 'جرّب الوصفات واحفظ المفضلة.'
+            : 'Explore recipes and save your favorites.',
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 
@@ -563,7 +971,10 @@ class _HomeScreenState extends State<HomeScreen> {
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: cardDark,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -578,14 +989,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   onSelected: (_) => setState(() => category = 'all'),
                 ),
                 const SizedBox(width: 8),
-                ...categories.map((c) => Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: FilterChip(
-                    selected: category == c,
-                    label: Text(c),
-                    onSelected: (_) => setState(() => category = c),
+                ...categories.map(
+                  (c) => Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: FilterChip(
+                      selected: category == c,
+                      label: Text(c),
+                      onSelected: (_) => setState(() => category = c),
+                    ),
                   ),
-                )),
+                ),
                 FilterChip(
                   selected: favoritesOnly,
                   avatar: const Icon(Icons.favorite, size: 18),
@@ -771,7 +1184,29 @@ class _RecipeDetailState extends State<RecipeDetail> {
                     Expanded(child: Text(steps[i], style: const TextStyle(fontSize: 16, height: 1.55))),
                   ]),
                 )),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: gold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => openWhatsApp(
+                      context,
+                      ar
+                          ? 'مرحباً شيف سلطان، أعجبتني وصفة ${r.nameAr}. أريد الاستفسار عن خدماتك أو حجزك.'
+                          : 'Hello Chef Sultan, I liked ${r.nameEn}. I would like to inquire about your services or book you.',
+                    ),
+                    icon: const Icon(Icons.chat),
+                    label: Text(
+                      ar ? 'احجز الشيف سلطان' : 'Book Chef Sultan',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -821,38 +1256,283 @@ class AboutScreen extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 140, height: 140,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: gold, width: 3)),
+                width: 145,
+                height: 145,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: gold, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gold.withOpacity(.18),
+                      blurRadius: 28,
+                    ),
+                  ],
+                ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
+                child: Image.asset(
+                  'assets/images/chef_sultan_app_icon (2).png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 18),
-            const Center(child: Text('Chef Sultan Darowish', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
-            const SizedBox(height: 8),
-            Center(child: Text(arabic ? 'Chef Sultan • Professional Chef' : 'Chef Sultan • Professional Chef', style: const TextStyle(color: gold, fontSize: 18))),
+            const Center(
+              child: Text(
+                'Chef Sultan Darowish',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Center(
+              child: Text(
+                'Professional Chef • Restaurant Solutions',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: gold, fontSize: 16),
+              ),
+            ),
             const SizedBox(height: 22),
             Text(
               arabic
-                ? 'شيف لايف محترف يقدم وصفات عربية وعالمية بأسلوب واضح وعملي. هذا التطبيق يجمع وصفات Chef Sultan في مكان واحد، بالعربية والإنجليزية.'
-                : 'A professional live chef sharing practical Arabic and international recipes. This app brings Chef Sultan’s recipes together in one bilingual collection.',
+                  ? 'وصفات عربية وعالمية، خدمات شيف خاص، حفلات وLive Cooking، إضافة إلى تصميم منيو فاخر وتطوير وصفات وحلول للمطاعم والكافيهات.'
+                  : 'Arabic and international recipes, private-chef services, events and live cooking, plus premium menu design, recipe development and restaurant solutions.',
               style: const TextStyle(fontSize: 17, height: 1.7),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(color: gold.withOpacity(.3)),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  arabic
-                    ? 'النسخة الأولى مجانية. تم تجهيز مكان للإعلانات ويمكن إضافة Google AdMob بعد إنشاء حساب الإعلانات وربط معرّفات الوحدات الإعلانية.'
-                    : 'Version 1 is free. An ad area is prepared, and Google AdMob can be integrated after creating an ad account and adding ad unit IDs.',
-                  style: const TextStyle(height: 1.5),
+                child: Column(
+                  children: [
+                    const Icon(Icons.verified, color: gold, size: 32),
+                    const SizedBox(height: 8),
+                    Text(
+                      arabic
+                          ? 'للحجوزات ومشاريع المطاعم'
+                          : 'Bookings & Restaurant Projects',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      whatsappDisplay,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
                 ),
               ),
-            )
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: gold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              onPressed: () => openWhatsApp(
+                context,
+                arabic
+                    ? 'مرحباً شيف سلطان، أريد الاستفسار عن خدماتك.'
+                    : 'Hello Chef Sultan, I would like to inquire about your services.',
+              ),
+              icon: const Icon(Icons.chat),
+              label: Text(
+                arabic
+                    ? 'تواصل عبر WhatsApp'
+                    : 'Contact on WhatsApp',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+class QuoteScreen extends StatefulWidget {
+  final bool arabic;
+  const QuoteScreen({super.key, required this.arabic});
+
+  @override
+  State<QuoteScreen> createState() => _QuoteScreenState();
+}
+
+class _QuoteScreenState extends State<QuoteScreen> {
+  final nameController = TextEditingController();
+  final cityController = TextEditingController();
+  final detailsController = TextEditingController();
+  int selectedService = 0;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    cityController.dispose();
+    detailsController.dispose();
+    super.dispose();
+  }
+
+  void sendQuote() {
+    final s = chefServices[selectedService];
+    final ar = widget.arabic;
+
+    final message = ar
+        ? 'مرحباً شيف سلطان،\n'
+          'أريد طلب عرض سعر.\n\n'
+          'الخدمة: ${s.ar}\n'
+          'الاسم: ${nameController.text.trim()}\n'
+          'المدينة/المنطقة: ${cityController.text.trim()}\n'
+          'التفاصيل: ${detailsController.text.trim()}'
+        : 'Hello Chef Sultan,\n'
+          'I would like to request a quotation.\n\n'
+          'Service: ${s.en}\n'
+          'Name: ${nameController.text.trim()}\n'
+          'City/Area: ${cityController.text.trim()}\n'
+          'Details: ${detailsController.text.trim()}';
+
+    openWhatsApp(context, message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = widget.arabic;
+    return Directionality(
+      textDirection: ar ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(ar ? 'اطلب عرض سعر' : 'Request a Quote'),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2A2111), Color(0xFF17130C)],
+                ),
+                border: Border.all(color: gold.withOpacity(.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ar
+                        ? 'ابدأ مشروعك مع Chef Sultan'
+                        : 'Start Your Project with Chef Sultan',
+                    style: const TextStyle(
+                      color: gold,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    ar
+                        ? 'اختر الخدمة وأرسل التفاصيل على WhatsApp مباشرة.'
+                        : 'Choose a service and send the details directly on WhatsApp.',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            DropdownButtonFormField<int>(
+              value: selectedService,
+              decoration: InputDecoration(
+                labelText: ar ? 'الخدمة المطلوبة' : 'Required Service',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              items: List.generate(
+                chefServices.length,
+                (i) => DropdownMenuItem(
+                  value: i,
+                  child: Text(
+                    ar ? chefServices[i].ar : chefServices[i].en,
+                  ),
+                ),
+              ),
+              onChanged: (v) {
+                setState(() => selectedService = v ?? 0);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: ar ? 'الاسم' : 'Name',
+                prefixIcon: const Icon(Icons.person_outline),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: cityController,
+              decoration: InputDecoration(
+                labelText: ar ? 'المدينة / المنطقة' : 'City / Area',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: detailsController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                labelText: ar ? 'تفاصيل الطلب' : 'Project Details',
+                alignLabelWithHint: true,
+                prefixIcon: const Icon(Icons.notes),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: gold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: sendQuote,
+              icon: const Icon(Icons.send),
+              label: Text(
+                ar
+                    ? 'إرسال الطلب عبر WhatsApp'
+                    : 'Send via WhatsApp',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: gold,
+                side: const BorderSide(color: gold),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              onPressed: () => callChef(context),
+              icon: const Icon(Icons.call),
+              label: Text(ar ? 'اتصال مباشر' : 'Call Directly'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
