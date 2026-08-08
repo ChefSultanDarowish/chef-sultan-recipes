@@ -87,7 +87,95 @@ const chefServices = <ChefService>[
     'تدريب عملي على الجودة، السرعة، التقديم وتوحيد الوصفات.',
     'Hands-on training for quality, speed, plating and recipe consistency.',
   ),
+  ChefService(
+    Icons.support_agent,
+    'استشارة مطعم 30 دقيقة • 99 AED',
+    '30-Min Restaurant Consultation • 99 AED',
+    'مراجعة المنيو، الأفكار، التكاليف والتطوير مع الشيف سلطان.',
+    'A focused review of your menu, concept, costs and development ideas with Chef Sultan.',
+  ),
+
 ];
+
+class MenuPackage {
+  final String nameAr;
+  final String nameEn;
+  final String price;
+  final List<String> featuresAr;
+  final List<String> featuresEn;
+  final bool popular;
+
+  const MenuPackage({
+    required this.nameAr,
+    required this.nameEn,
+    required this.price,
+    required this.featuresAr,
+    required this.featuresEn,
+    this.popular = false,
+  });
+}
+
+const menuPackages = <MenuPackage>[
+  MenuPackage(
+    nameAr: 'Basic',
+    nameEn: 'Basic',
+    price: '199 AED',
+    featuresAr: [
+      'حتى 20 صنف',
+      'لغة واحدة عربي أو إنجليزي',
+      'تصميم PDF فاخر',
+      'تعديل واحد',
+    ],
+    featuresEn: [
+      'Up to 20 items',
+      'Arabic or English',
+      'Premium PDF design',
+      '1 revision',
+    ],
+  ),
+  MenuPackage(
+    nameAr: 'Professional',
+    nameEn: 'Professional',
+    price: '399 AED',
+    popular: true,
+    featuresAr: [
+      'حتى 40 صنف',
+      'عربي + إنجليزي',
+      'تصميم فاخر للمطعم',
+      'QR Menu جاهز',
+      'تعديلان',
+    ],
+    featuresEn: [
+      'Up to 40 items',
+      'Arabic + English',
+      'Premium restaurant design',
+      'QR Menu ready',
+      '2 revisions',
+    ],
+  ),
+  MenuPackage(
+    nameAr: 'Premium',
+    nameEn: 'Premium',
+    price: '699 AED',
+    featuresAr: [
+      'حتى 70 صنف',
+      'عربي + إنجليزي',
+      'وصف احترافي للأطباق',
+      'QR Menu',
+      'تنظيم الأقسام والأسعار',
+      '3 تعديلات',
+    ],
+    featuresEn: [
+      'Up to 70 items',
+      'Arabic + English',
+      'Professional dish descriptions',
+      'QR Menu',
+      'Menu structure & pricing layout',
+      '3 revisions',
+    ],
+  ),
+];
+
 
 class Recipe {
   final int id;
@@ -554,6 +642,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _moneyActions(context)),
             SliverToBoxAdapter(child: _serviceSection(context)),
             SliverToBoxAdapter(child: _restaurantOffer(context)),
+            SliverToBoxAdapter(child: _packagesSection(context)),
             SliverToBoxAdapter(child: _recipesTitle()),
             SliverToBoxAdapter(child: _filters()),
             SliverPadding(
@@ -917,6 +1006,186 @@ class _HomeScreenState extends State<HomeScreen> {
                 widget.arabic ? 'اطلب عرض سعر' : 'Request a Quote',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _packagesSection(BuildContext context) {
+    final ar = widget.arabic;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(
+            ar ? 'باقات تصميم المنيو' : 'Menu Design Packages',
+            ar
+                ? 'أسعار تبدأ من باقات واضحة وسهلة للطلب.'
+                : 'Clear starting packages that are easy to order.',
+          ),
+          const SizedBox(height: 12),
+          ...List.generate(menuPackages.length, (index) {
+            final p = menuPackages[index];
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: p.popular
+                    ? const LinearGradient(
+                        colors: [Color(0xFF35280F), Color(0xFF1D180F)],
+                      )
+                    : null,
+                color: p.popular ? null : cardDark,
+                border: Border.all(
+                  color: p.popular ? gold : gold.withOpacity(.28),
+                  width: p.popular ? 1.6 : 1,
+                ),
+                boxShadow: p.popular
+                    ? [
+                        BoxShadow(
+                          color: gold.withOpacity(.10),
+                          blurRadius: 18,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (p.popular)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 7),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: gold,
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Text(
+                                  ar ? 'الأكثر طلباً' : 'MOST POPULAR',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            Text(
+                              ar ? p.nameAr : p.nameEn,
+                              style: const TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            p.price,
+                            style: const TextStyle(
+                              color: gold,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            ar ? 'ابتداءً من' : 'Starting from',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(
+                    ar ? p.featuresAr.length : p.featuresEn.length,
+                    (i) {
+                      final feature =
+                          ar ? p.featuresAr[i] : p.featuresEn[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 7),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: gold,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                feature,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: p.popular
+                            ? gold
+                            : const Color(0xFF2A2418),
+                        foregroundColor:
+                            p.popular ? Colors.black : gold,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () => openWhatsApp(
+                        context,
+                        ar
+                            ? 'مرحباً شيف سلطان، أريد باقة ${p.nameAr} لتصميم منيو المطعم بسعر يبدأ من ${p.price}. أرجو إرسال التفاصيل.'
+                            : 'Hello Chef Sultan, I want the ${p.nameEn} restaurant menu package starting from ${p.price}. Please send the details.',
+                      ),
+                      icon: const Icon(Icons.shopping_bag_outlined),
+                      label: Text(
+                        ar ? 'اطلب هذه الباقة' : 'Order This Package',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          Text(
+            ar
+                ? 'ملاحظة: السعر النهائي يعتمد على عدد الأصناف والتفاصيل المطلوبة، ويتم تأكيده قبل بدء العمل.'
+                : 'Note: Final pricing depends on the number of items and project scope and is confirmed before work begins.',
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 11,
+              height: 1.4,
             ),
           ),
         ],
