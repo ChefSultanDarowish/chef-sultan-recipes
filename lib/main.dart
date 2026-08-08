@@ -507,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/images/chef_sultan.jpg', fit: BoxFit.cover),
+          Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -722,7 +722,16 @@ class _RecipeDetailState extends State<RecipeDetail> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [
-          AspectRatio(aspectRatio: 16/10, child: Image.asset(r.image, fit: BoxFit.cover)),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+            child: AspectRatio(
+              aspectRatio: 16/10,
+              child: Image.asset(r.image, fit: BoxFit.cover),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -737,6 +746,7 @@ class _RecipeDetailState extends State<RecipeDetail> {
                 ]),
                 const SizedBox(height: 24),
                 _sectionTitle(ar ? 'المكونات' : 'Ingredients'),
+                const Divider(color: Color(0xFF3A3A3A)),
                 ...ingredients.map((x) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -747,6 +757,7 @@ class _RecipeDetailState extends State<RecipeDetail> {
                 )),
                 const SizedBox(height: 24),
                 _sectionTitle(ar ? 'طريقة التحضير' : 'Instructions'),
+                const Divider(color: Color(0xFF3A3A3A)),
                 ...List.generate(steps.length, (i) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -813,13 +824,13 @@ class AboutScreen extends StatelessWidget {
                 width: 140, height: 140,
                 decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: gold, width: 3)),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset('assets/images/chef_sultan.jpg', fit: BoxFit.cover),
+                child: Image.asset('assets/images/chef_sultan_app_icon (2).png', fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 18),
             const Center(child: Text('Chef Sultan Darowish', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
             const SizedBox(height: 8),
-            Center(child: Text(arabic ? 'Professional Live Chef' : 'Professional Live Chef', style: const TextStyle(color: gold, fontSize: 18))),
+            Center(child: Text(arabic ? 'Chef Sultan • Professional Chef' : 'Chef Sultan • Professional Chef', style: const TextStyle(color: gold, fontSize: 18))),
             const SizedBox(height: 22),
             Text(
               arabic
