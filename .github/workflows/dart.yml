@@ -1,4 +1,4 @@
-name: Build Chef Sultan V4
+name: Build Chef Sultan V5 AdMob
 
 on:
   workflow_dispatch:
@@ -25,7 +25,38 @@ jobs:
       - name: Prepare Android
         run: flutter create --platforms=android .
 
-      - name: Set Chef Sultan app icon
+      - name: Configure Android for AdMob
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_id = "ca-app-pub-4592512578405132~5168162196"
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text(encoding="utf-8")
+          if "com.google.android.gms.ads.APPLICATION_ID" not in text:
+              meta = f'''
+                  <meta-data
+                      android:name="com.google.android.gms.ads.APPLICATION_ID"
+                      android:value="{app_id}" />
+              '''
+              text = text.replace("</application>", meta + "\n    </application>")
+              manifest.write_text(text, encoding="utf-8")
+
+          kts = Path("android/app/build.gradle.kts")
+          gradle = Path("android/app/build.gradle")
+          if kts.exists():
+              g = kts.read_text(encoding="utf-8")
+              g = g.replace("minSdk = flutter.minSdkVersion", "minSdk = 23")
+              kts.write_text(g, encoding="utf-8")
+          elif gradle.exists():
+              g = gradle.read_text(encoding="utf-8")
+              g = g.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 23")
+              g = g.replace("minSdkVersion = flutter.minSdkVersion", "minSdkVersion = 23")
+              gradle.write_text(g, encoding="utf-8")
+          PY
+
+      - name: Apply Chef Sultan icon
         run: |
           cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -42,5 +73,5 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chef-Sultan-V4-APK
+          name: Chef-Sultan-V5-AdMob-Test-APK
           path: build/app/outputs/flutter-apk/app-release.apk
