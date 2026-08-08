@@ -27,11 +27,11 @@ jobs:
 
       - name: Set Chef Sultan app icon
         run: |
-          cp assets/images/chef_sultan_app_icon (2).png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          cp assets/images/chef_sultan_app_icon (2).png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          cp assets/images/chef_sultan_app_icon (2).png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          cp assets/images/chef_sultan_app_icon (2).png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          cp assets/images/chef_sultan_app_icon (2).png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp "assets/images/chef_sultan_app_icon (2).png" android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Get packages
         run: flutter pub get
