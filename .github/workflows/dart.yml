@@ -1,4 +1,4 @@
-name: Build Chef Sultan V5 AdMob
+name: Build Chef Sultan V6 AdMob Safe Test
 
 on:
   workflow_dispatch:
@@ -25,23 +25,56 @@ jobs:
       - name: Prepare Android
         run: flutter create --platforms=android .
 
-      - name: Configure Android for AdMob
+      - name: Make AdMob startup safe
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          app_id = "ca-app-pub-4592512578405132~5168162196"
+          main_file = Path("lib/main.dart")
+          text = main_file.read_text(encoding="utf-8")
+
+          pattern = r"Future<void> main\(\) async \{\s*WidgetsFlutterBinding\.ensureInitialized\(\);\s*await MobileAds\.instance\.initialize\(\);\s*runApp\(const ChefSultanApp\(\)\);\s*\}"
+          replacement = """void main() {
+            WidgetsFlutterBinding.ensureInitialized();
+            MobileAds.instance.initialize();
+            runApp(const ChefSultanApp());
+          }"""
+          text = re.sub(pattern, replacement, text, count=1)
+          main_file.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Configure Android for safe AdMob test
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          sample_app_id = "ca-app-pub-3940256099942544~3347511713"
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           text = manifest.read_text(encoding="utf-8")
-          if "com.google.android.gms.ads.APPLICATION_ID" not in text:
-              meta = f'''
-                  <meta-data
-                      android:name="com.google.android.gms.ads.APPLICATION_ID"
-                      android:value="{app_id}" />
-              '''
+
+          if 'android.permission.INTERNET' not in text:
+              pos = text.find(">")
+              text = text[:pos+1] + '\n    <uses-permission android:name="android.permission.INTERNET"/>' + text[pos+1:]
+
+          if "com.google.android.gms.ads.APPLICATION_ID" in text:
+              text = re.sub(
+                  r'(<meta-data\s+android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"\s+android:value=")[^"]+(")',
+                  r'\1' + sample_app_id + r'\2',
+                  text,
+                  flags=re.S,
+              )
+          else:
+              meta = f"""
+              <meta-data
+                  android:name="com.google.android.gms.ads.APPLICATION_ID"
+                  android:value="{sample_app_id}" />
+              """
               text = text.replace("</application>", meta + "\n    </application>")
-              manifest.write_text(text, encoding="utf-8")
+
+          manifest.write_text(text, encoding="utf-8")
 
           kts = Path("android/app/build.gradle.kts")
           gradle = Path("android/app/build.gradle")
@@ -73,5 +106,5 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chef-Sultan-V5-AdMob-Test-APK
+          name: Chef-Sultan-V6-AdMob-Safe-Test-APK
           path: build/app/outputs/flutter-apk/app-release.apk
