@@ -1,0 +1,192 @@
+name: Chef Sultan V9 AdMob Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create clean AdMob test app
+        run: |
+          flutter create --org com.chefsultan --project-name chef_sultan_admob_check admob_check
+          cd admob_check
+          flutter pub add google_mobile_ads
+
+      - name: Write safe test screen
+        run: |
+          cat > admob_check/lib/main.dart <<'DART'
+          import 'package:flutter/material.dart';
+          import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+          void main() {
+            WidgetsFlutterBinding.ensureInitialized();
+            runApp(const AdMobCheckApp());
+          }
+
+          class AdMobCheckApp extends StatelessWidget {
+            const AdMobCheckApp({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: ThemeData.dark(),
+                home: const AdMobCheckPage(),
+              );
+            }
+          }
+
+          class AdMobCheckPage extends StatefulWidget {
+            const AdMobCheckPage({super.key});
+
+            @override
+            State<AdMobCheckPage> createState() => _AdMobCheckPageState();
+          }
+
+          class _AdMobCheckPageState extends State<AdMobCheckPage> {
+            BannerAd? _banner;
+            String _status = 'Starting AdMob...';
+
+            @override
+            void initState() {
+              super.initState();
+              _start();
+            }
+
+            Future<void> _start() async {
+              try {
+                await MobileAds.instance.initialize();
+
+                final banner = BannerAd(
+                  adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+                  size: AdSize.banner,
+                  request: const AdRequest(),
+                  listener: BannerAdListener(
+                    onAdLoaded: (ad) {
+                      if (!mounted) {
+                        ad.dispose();
+                        return;
+                      }
+                      setState(() {
+                        _banner = ad as BannerAd;
+                        _status = 'TEST AD LOADED ✅';
+                      });
+                    },
+                    onAdFailedToLoad: (ad, error) {
+                      ad.dispose();
+                      if (!mounted) return;
+                      setState(() {
+                        _status = 'Ad failed: ${error.code}';
+                      });
+                    },
+                  ),
+                );
+
+                banner.load();
+                if (mounted) {
+                  setState(() => _status = 'Loading test ad...');
+                }
+              } catch (e) {
+                if (mounted) {
+                  setState(() => _status = 'AdMob error: $e');
+                }
+              }
+            }
+
+            @override
+            void dispose() {
+              _banner?.dispose();
+              super.dispose();
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('Chef Sultan • AdMob Check')),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.restaurant, size: 72),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Chef Sultan AdMob Test',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(_status, textAlign: TextAlign.center),
+                        const SizedBox(height: 30),
+                        if (_banner != null)
+                          SizedBox(
+                            width: _banner!.size.width.toDouble(),
+                            height: _banner!.size.height.toDouble(),
+                            child: AdWidget(ad: _banner!),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+          DART
+
+      - name: Configure Android AdMob sample ID
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("admob_check/android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text(encoding="utf-8")
+
+          if 'android.permission.INTERNET' not in text:
+              text = text.replace(
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                  '    <uses-permission android:name="android.permission.INTERNET" />'
+              )
+
+          if 'com.google.android.gms.ads.APPLICATION_ID' not in text:
+              meta = '''
+                  <meta-data
+                      android:name="com.google.android.gms.ads.APPLICATION_ID"
+                      android:value="ca-app-pub-3940256099942544~3347511713" />
+              '''
+              text = text.replace('</application>', meta + '\n    </application>')
+
+          manifest.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Get packages
+        working-directory: admob_check
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: admob_check
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chef-Sultan-V9-AdMob-Check-APK
+          path: admob_check/build/app/outputs/flutter-apk/app-release.apk
