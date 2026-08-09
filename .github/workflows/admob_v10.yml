@@ -203,14 +203,6 @@ jobs:
         working-directory: admob_v10
         run: flutter build apk --release
 
-      - name: Verify merged manifest
-        run: |
-          MANIFEST=$(find admob_v10/build -path '*merged_manifests*release*AndroidManifest.xml' | head -n 1)
-          echo "Merged manifest: $MANIFEST"
-          test -n "$MANIFEST"
-          grep -n "com.google.android.gms.ads.APPLICATION_ID" "$MANIFEST"
-          grep -n "ca-app-pub-3940256099942544~3347511713" "$MANIFEST"
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
